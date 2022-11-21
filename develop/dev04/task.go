@@ -1,5 +1,13 @@
 package main
 
+import (
+	"fmt"
+	"math/big"
+	"sort"
+	"strings"
+	"time"
+)
+
 /*
 === Поиск анаграмм по словарю ===
 
@@ -20,5 +28,61 @@ package main
 */
 
 func main() {
+	arr := []string{"тяпка", "пятак", "", "", "пятка", "пятка", "листок", "слиток", "столик", "dsads", "nap", "teachers", "cheaters", "PAN", "ear", "era", "hectares", "кот", "пила", "барокко",
+		"стоп", "ток", "кошка",
+		"липа", "коробка", "пост"}
+	startTime := time.Now().UnixNano()
+	result := getSetAnagrams(arr)
+	fmt.Printf("Time: %d\n", time.Now().UnixNano()-startTime)
 
+	for k, v := range result {
+		fmt.Printf("Key:%s Values: %v \n", k, v)
+	}
+
+}
+
+func getSetAnagrams(wordsSlice []string) map[string][]string {
+	wordsSet := map[string]struct{}{}   // ключ: слово из слайса wordSlice
+	result := map[string][]string{}     // ключ: первое слово анаграммы, значение: множество слов данной анаграммы
+	firstWordMap := map[string]string{} // ключ число big.Int, значение слово
+	for _, word := range wordsSlice {
+		if word == "" {
+			continue
+		}
+
+		w := strings.ToLower(word)
+
+		if _, ok := wordsSet[w]; !ok {
+			wordsSet[w] = struct{}{}
+			wRunes := []rune(w)
+			lettersMultiplicationNum := big.NewInt(int64(wRunes[0]))
+
+			for i := 1; i < len(wRunes); i++ { // подсчет уникального номера анаграммы
+				runeInBigInt := big.NewInt(int64(wRunes[i]))
+				lettersMultiplicationNum = lettersMultiplicationNum.Mul(lettersMultiplicationNum, runeInBigInt)
+			}
+
+			numOfAnagram := lettersMultiplicationNum.String() // уникальный номер анаграмыы
+
+			if resultKeyName, ok := firstWordMap[numOfAnagram]; !ok { // если уникальный номер анаграммы еще не был добавлен ,то она добавляется в множество как ключ ,а значение в себе хранит первое слово данной анаграмы
+				firstWordMap[numOfAnagram] = w
+				result[w] = []string{w}
+			} else {
+				result[resultKeyName] = append(result[resultKeyName], w) // добавляем в слайс результатов
+			}
+
+		}
+
+	}
+
+	// убираем множества где только 1 результат и сортируем где больше 1
+	for k, v := range result {
+		if len(v) <= 1 {
+			delete(result, k)
+		} else {
+			sort.Strings(v)
+		}
+	}
+
+	return result
 }
