@@ -27,7 +27,7 @@ import (
 */
 
 func main() {
-	arr := []string{"тяпка", "пятак", "пЯтка", "пятка", "листок", "слиток", "столик", ""}
+	arr := []string{"тяпка", "пятак", "пЯтка", "пятка", "листок", "слиток", "столик", "", "", "fsdfds"}
 	result := getSetAnagrams(arr)
 
 	for k, v := range result {
