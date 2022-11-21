@@ -41,11 +41,6 @@ func main() {
 
 }
 
-type Anagram struct {
-	wordsMap map[rune]int
-	anagrams []string
-}
-
 func getSetAnagrams(wordsSlice []string) map[string][]string {
 	wordsSet := map[string]struct{}{}   // ключ: слово из слайса wordSlice
 	result := map[string][]string{}     // ключ: первое слово анаграммы, значение: множество слов данной анаграммы
