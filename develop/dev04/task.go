@@ -5,7 +5,6 @@ import (
 	"math/big"
 	"sort"
 	"strings"
-	"time"
 )
 
 /*
@@ -28,12 +27,8 @@ import (
 */
 
 func main() {
-	arr := []string{"тяпка", "пятак", "", "", "пятка", "пятка", "листок", "слиток", "столик", "dsads", "nap", "teachers", "cheaters", "PAN", "ear", "era", "hectares", "кот", "пила", "барокко",
-		"стоп", "ток", "кошка",
-		"липа", "коробка", "пост"}
-	startTime := time.Now().UnixNano()
+	arr := []string{"тяпка", "пятак", "пЯтка", "пятка", "листок", "слиток", "столик", ""}
 	result := getSetAnagrams(arr)
-	fmt.Printf("Time: %d\n", time.Now().UnixNano()-startTime)
 
 	for k, v := range result {
 		fmt.Printf("Key:%s Values: %v \n", k, v)
