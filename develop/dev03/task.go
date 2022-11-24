@@ -5,11 +5,13 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 /*
@@ -65,11 +67,35 @@ func main() {
 	numOfSortColumn--
 	fileName := flag.Arg(0)
 
-	sortUtil(fileName, numOfSortColumn, isNumericSort, isReverseSort, notPrintRepetitions)
+	sortingObj, err := NewSortObj(fileName, numOfSortColumn, isNumericSort, isReverseSort, notPrintRepetitions)
+	if err != nil {
+		_, _ = io.WriteString(os.Stderr, err.Error()+"\n")
+		os.Exit(1)
+	}
+	sortingObj.Sort()
 
+	newFileName := fmt.Sprintf("output-%v.txt", time.Now().Format("2006-01-02-15-04-05"))
+	newFile, err := os.Create(newFileName)
+	if err != nil {
+		errStr := fmt.Sprintf("unable to create a file with error: %v.", err.Error())
+		_, _ = os.Stderr.WriteString(errStr)
+		os.Exit(1)
+	}
+
+	for _, v := range sortingObj.rowsSlices {
+		row := strings.Join(v, " ")
+		_, err := newFile.WriteString(row + "\n")
+		if err != nil {
+			errStr := fmt.Sprintf("unable to write to file with error: %v.", err.Error())
+			_, _ = os.Stderr.WriteString(errStr)
+			os.Exit(1)
+		}
+		fmt.Println(row)
+	}
 }
 
-func sortUtil(fileName string, numOfSortColumn int, isNumericSort bool, isReverseSort bool, notPrintRepetitions bool) error {
+// NewSortObj метод создания объекта сортировки
+func NewSortObj(fileName string, numOfSortColumn int, isNumericSort bool, isReverseSort bool, notPrintRepetitions bool) (*SortingObj, error) {
 	sortingObj := SortingObj{
 		rowsSlices: make([][]string, 0, 1024),
 		Sortoptions: Sortoptions{
@@ -83,22 +109,10 @@ func sortUtil(fileName string, numOfSortColumn int, isNumericSort bool, isRevers
 	err := readFileAndGetRowsSlice(fileName, &sortingObj)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	for _, v := range sortingObj.rowsSlices {
-		fmt.Println(strings.Join(v, " "))
-	}
-
-	sortingObj.Sort()
-
-	fmt.Println("=======================")
-
-	for _, v := range sortingObj.rowsSlices {
-		fmt.Println(strings.Join(v, " "))
-	}
-
-	return nil
+	return &sortingObj, nil
 }
 
 // SortingObj структура содержащая опции и сами строки
@@ -129,7 +143,7 @@ func (s SortingObj) reverseResultIfReverseSort(b bool) bool {
 // Метод
 func (s SortingObj) skipSolution(i, j int, s1, s2 bool) bool {
 	if s1 && s2 {
-		s.defaultSort(0, i, j)
+		return s.defaultSort(0, i, j)
 	} else if s1 {
 		return s.reverseResultIfReverseSort(true)
 	} else if s2 {
@@ -158,7 +172,6 @@ func (s SortingObj) defaultSort(col, i, j int) bool {
 	if s.Sortoptions.isReverseSort {
 		return s.rowsSlices[i][col] > s.rowsSlices[j][col]
 	}
-
 	return s.rowsSlices[i][col] < s.rowsSlices[j][col]
 }
 
@@ -205,7 +218,7 @@ type Sortoptions struct {
 func readFileAndGetRowsSlice(fileName string, sortingObj *SortingObj) error {
 
 	if fileName == "" {
-		fmt.Println("Argument not passed: file name")
+		// fmt.Println("Argument not passed: file name")
 		return errors.New("Argument not passed: file name")
 	}
 
