@@ -107,7 +107,7 @@ type SortingObj struct {
 	Sortoptions
 }
 
-func (s SortingObj) getSortingColumn(i, j int) (skipElement1 bool, skipElement2 bool) {
+func (s SortingObj) isHaveIndex(i, j int) (skipElement1 bool, skipElement2 bool) {
 	if s.Sortoptions.numOfSortColumn > len(s.rowsSlices[i])-1 {
 		skipElement1 = true
 	}
@@ -140,6 +140,7 @@ func (s SortingObj) skipSolution(i, j int, s1, s2 bool) bool {
 
 }
 
+// isNumeric метод проверки на число
 func (s SortingObj) isNumeric(col, i, j int) (skipElement1 bool, skipElement2 bool) {
 	_, err := strconv.ParseFloat(s.rowsSlices[i][col], 64)
 	if err != nil {
@@ -175,13 +176,13 @@ func (s SortingObj) numericSort(col, i, j int) bool {
 // Sort Метод сортировки
 func (s SortingObj) Sort() {
 	sort.SliceStable(s.rowsSlices, func(i, j int) bool {
-		skip1, skip2 := s.getSortingColumn(i, j)
+		skip1, skip2 := s.isHaveIndex(i, j)
 		if skip1 || skip2 {
 			return s.skipSolution(i, j, skip1, skip2)
 		}
 
 		if s.Sortoptions.isNumericSort {
-			skip1, skip2 := s.getSortingColumn(i, j)
+			skip1, skip2 := s.isNumeric(s.numOfSortColumn, i, j)
 			if skip1 || skip2 {
 				return s.skipSolution(i, j, skip1, skip2)
 			}
