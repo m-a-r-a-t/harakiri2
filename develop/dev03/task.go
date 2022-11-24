@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -61,7 +62,7 @@ func main() {
 	flag.BoolVar(&notPrintRepetitions, "u", false, "не выводить повторяющиеся строки")
 	permutateArgs(os.Args)
 	flag.Parse()
-	numOfSortColumn -= 1
+	numOfSortColumn--
 	fileName := flag.Arg(0)
 
 	sortUtil(fileName, numOfSortColumn, isNumericSort, isReverseSort, notPrintRepetitions)
@@ -89,9 +90,9 @@ func sortUtil(fileName string, numOfSortColumn int, isNumericSort bool, isRevers
 		fmt.Println(strings.Join(v, " "))
 	}
 
-	sort.Sort(sortingObj)
+	sortingObj.Sort()
 
-	fmt.Println()
+	fmt.Println("=======================")
 
 	for _, v := range sortingObj.rowsSlices {
 		fmt.Println(strings.Join(v, " "))
@@ -100,25 +101,20 @@ func sortUtil(fileName string, numOfSortColumn int, isNumericSort bool, isRevers
 	return nil
 }
 
+// SortingObj структура содержащая опции и сами строки
 type SortingObj struct {
 	rowsSlices [][]string
 	Sortoptions
 }
 
-func (s SortingObj) getSortingColumn(i, j int) (col int, skipElement1 bool, skipElement2 bool) {
-	col = 0
-
+func (s SortingObj) getSortingColumn(i, j int) (skipElement1 bool, skipElement2 bool) {
 	if s.Sortoptions.numOfSortColumn > len(s.rowsSlices[i])-1 {
 		skipElement1 = true
-		return
 	}
 
 	if s.Sortoptions.numOfSortColumn > len(s.rowsSlices[j])-1 {
 		skipElement2 = true
-		return
 	}
-
-	col = s.Sortoptions.numOfSortColumn
 
 	return
 }
@@ -131,9 +127,10 @@ func (s SortingObj) reverseResultIfReverseSort(b bool) bool {
 }
 
 // Метод
-func (s SortingObj) skipSolution(s1, s2 bool) bool {
-
-	if s1 {
+func (s SortingObj) skipSolution(i, j int, s1, s2 bool) bool {
+	if s1 && s2 {
+		s.defaultSort(0, i, j)
+	} else if s1 {
 		return s.reverseResultIfReverseSort(true)
 	} else if s2 {
 		return s.reverseResultIfReverseSort(false)
@@ -143,20 +140,59 @@ func (s SortingObj) skipSolution(s1, s2 bool) bool {
 
 }
 
-// Метод сортировки
+func (s SortingObj) isNumeric(col, i, j int) (skipElement1 bool, skipElement2 bool) {
+	_, err := strconv.ParseFloat(s.rowsSlices[i][col], 64)
+	if err != nil {
+		skipElement1 = true
+	}
+	_, err = strconv.ParseFloat(s.rowsSlices[j][col], 64)
+	if err != nil {
+		skipElement2 = true
+	}
+
+	return
+}
+
+func (s SortingObj) defaultSort(col, i, j int) bool {
+	if s.Sortoptions.isReverseSort {
+		return s.rowsSlices[i][col] > s.rowsSlices[j][col]
+	}
+
+	return s.rowsSlices[i][col] < s.rowsSlices[j][col]
+}
+
+func (s SortingObj) numericSort(col, i, j int) bool {
+	n1, _ := strconv.ParseFloat(s.rowsSlices[i][col], 64)
+	n2, _ := strconv.ParseFloat(s.rowsSlices[j][col], 64)
+
+	if s.Sortoptions.isReverseSort {
+		return n1 > n2
+	}
+
+	return n1 < n2
+}
+
+// Sort Метод сортировки
 func (s SortingObj) Sort() {
 	sort.SliceStable(s.rowsSlices, func(i, j int) bool {
-		col, skip1, skip2 := s.getSortingColumn(i, j)
+		skip1, skip2 := s.getSortingColumn(i, j)
 		if skip1 || skip2 {
-			return s.skipSolution(skip1, skip2)
+			return s.skipSolution(i, j, skip1, skip2)
 		}
 
-		
+		if s.Sortoptions.isNumericSort {
+			skip1, skip2 := s.getSortingColumn(i, j)
+			if skip1 || skip2 {
+				return s.skipSolution(i, j, skip1, skip2)
+			}
+			return s.numericSort(s.numOfSortColumn, i, j)
+		}
 
-		return s.rowsSlices[i][col] < s.rowsSlices[j][col]
+		return s.defaultSort(s.numOfSortColumn, i, j)
 	})
 }
 
+// Sortoptions ключи передаваемые в программу
 type Sortoptions struct {
 	numOfSortColumn     int
 	isNumericSort       bool
@@ -164,26 +200,7 @@ type Sortoptions struct {
 	notPrintRepetitions bool // при чтении файла
 }
 
-func (o SortingObj) Len() int { return len(o.rowsSlices) }
-func (o SortingObj) Swap(i, j int) {
-	o.rowsSlices[i], o.rowsSlices[j] = o.rowsSlices[j], o.rowsSlices[i]
-}
-func (o SortingObj) Less(i, j int) bool {
-
-	c1 := o.numOfSortColumn - 1
-	c2 := c1
-	// fmt.Println("fsdfds", c1, c2, o.numOfSortColumn)
-	if c1 > len(o.rowsSlices[i])-1 {
-		c1 = 0
-	}
-
-	if c2 > len(o.rowsSlices[j])-1 {
-		// Если индекс колонки больше чем индексов ,то сортируем по первому
-		c2 = 0
-	}
-	return o.rowsSlices[i][c1] < o.rowsSlices[j][c2]
-}
-
+// функция чтения файла построчно
 func readFileAndGetRowsSlice(fileName string, sortingObj *SortingObj) error {
 
 	if fileName == "" {
